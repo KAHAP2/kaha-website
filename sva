@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Advisor Sales System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <!-- Include html2pdf -->
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f6f9;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .navbar {
+            background-color: #2c3e50;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        .navbar a:hover {
+            background-color: #34495e;
+        }
+        .navbar a.active {
+            background-color: #1abc9c;
+        }
+        .content {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-in;
+            flex: 1;
+        }
+        .content.active {
+            display: block;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #34495e;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        .form-container, .filter-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            width: 45%; /* Half width */
+            display: inline-block;
+            vertical-align: top;
+        }
+        .summary-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            width: 45%; /* Same width as form */
+            display: inline-block;
+            vertical-align: top;
+            margin-left: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        select, input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        input[type="submit"] {
+            background-color: #1abc9c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        input[type="submit"]:hover {
+            background-color: #16a085;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+        canvas#salesChart {
+            max-width: 2400px; /* 4 times the original 600px */
+            width: 100% !important; /* Ensure it scales with container */
+            height: auto !important; /* Maintain aspect ratio */
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        canvas#croChart {
+            max-width: 100%;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        canvas#intakeChart {
+            max-width: 2400px; /* 4 times the original 600px */
+            width: 100% !important; /* Ensure it scales with container */
+            height: auto !important; /* Maintain aspect ratio */
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .due-soon {
+            background-color: #ffebee; /* Light red for due soon */
+        }
+        button {
+            background-color: #1abc9c;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin: 0 5px;
+        }
+        button:hover {
+            background-color: #16a085;
+            transform: scale(1.05);
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .print-btn {
+            background-color: #3498db;
+            margin-top: 10px;
+        }
+        .print-btn:hover {
+            background-color: #2980b9;
+        }
+        footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 600px) {
+            .navbar a {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .form-container, .filter-container, .summary-container {
+                width: 100%; /* Full width on small screens */
+                margin-left: 0;
+            }
+            table, .form-container, .filter-container, .summary-container {
+                font-size: 12px;
+            }
+            canvas#salesChart, canvas#intakeChart {
+                max-width: 100%; /* Scale down on small screens */
+            }
+            canvas#croChart {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Service Advisor Sales System</h1>
+    </header>
+
+    <!-- Navigation Menu -->
+    <div class="navbar">
+        <a href="#" onclick="showSection('sales-data')" class="active">Sales Data</a>
+        <a href="#" onclick="showSection('report')">Report</a>
+        <a href="#" onclick="showSection('cust-request')">Cust Request Order</a>
+        <a href="#" onclick="showSection('existing-cust')">Existing Cust</a>
+        <a href="#" onclick="showSection('setting')">Setting</a>
+    </div>
+
+    <!-- Sales Data Section -->
+    <div id="sales-data" class="content active">
+        <h1>Update Daily Sales</h1>
+        <div class="form-container">
+            <form id="salesForm" onsubmit="updateSalesData(event)">
+                <label for="advisor">Select Service Advisor:</label>
+                <select id="advisor" name="advisor" required>
+                    <!-- Populated dynamically -->
+                </select><br><br>
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required><br><br>
+
+                <label for="intake">Intake (Unit):</label>
+                <input type="number" id="intake" name="intake" min="0" required><br><br>
+
+                <label for="labour">Labour (RM):</label>
+                <input type="number" id="labour" name="labour" min="0" step="0.01" required><br><br>
+
+                <label for="part">Part (RM):</label>
+                <input type="number" id="part" name="part" min="0" step="0.01" required><br><br>
+
+                <label for="accessories">Accessories (RM):</label>
+                <input type="number" id="accessories" name="accessories" min="0" step="0.01" required><br><br>
+
+                <label for="gearup">Gear Up (RM):</label>
+                <input type="number" id="gearup" name="gearup" min="0" step="0.01" required><br><br>
+
+                <label for="lubricant">Lubricant (RM):</label>
+                <input type="number" id="lubricant" name="lubricant" min="0" step="0.01" required><br><br>
+
+                <label for="material">Material (RM):</label>
+                <input type="number" id="material" name="material" min="0" step="0.01" required><br><br>
+
+                <input type="submit" value="Update">
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Section -->
+    <div id="report" class="content">
+        <h1>Service Advisor Sales Report</h1>
+        <div class="filter-container">
+            <label for="advisorFilter">Select Service Advisor:</label>
+            <select id="advisorFilter" onchange="filterTable()">
+                <option value="all">All</option>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+        <button class="print-btn" onclick="printSalesReport()">Print to PDF</button>
+        <canvas id="salesChart"></canvas>
+        <table id="reportTable">
+            <thead>
+                <tr>
+                    <th>Advisor</th>
+                    <th>Intake (Unit)</th>
+                    <th>Labour (RM)</th>
+                    <th>Part (RM)</th>
+                    <th>Accessories (RM)</th>
+                    <th>Gear Up (RM)</th>
+                    <th>Lubricant (RM)</th>
+                    <th>Material (RM)</th>
+                    <th>Total Sales (RM)</th>
+                </tr>
+            </thead>
+            <tbody id="reportBody">
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+
+        <h1>Intake Report</h1>
+        <div class="filter-container">
+            <label for="advisorIntakeFilter">Select Service Advisor:</label>
+            <select id="advisorIntakeFilter" onchange="filterIntakeTable()">
+                <option value="all">All</option>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+        <button class="print-btn" onclick="printIntakeReport()">Print to PDF</button>
+        <canvas id="intakeChart"></canvas>
+        <table id="intakeTable">
+            <thead>
+                <tr>
+                    <th>Advisor</th>
+                    <th>Total Intake (Unit)</th>
+                </tr>
+            </thead>
+            <tbody id="intakeBody">
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Cust Request Order Section -->
+    <div id="cust-request" class="content">
+        <h1>Customer Request Order</h1>
+        <div class="form-container">
+            <form id="orderForm" onsubmit="addOrder(event)">
+                <label for="orderAdvisor">Select Service Advisor:</label>
+                <select id="orderAdvisor" name="orderAdvisor" required>
+                    <!-- Populated dynamically -->
+                </select><br><br>
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date" required><br><br>
+
+                <label for="regNo">Reg No:</label>
+                <input type="text" id="regNo" name="regNo" required><br><br>
+
+                <label for="partNo">Part No:</label>
+                <input type="text" id="partNo" name="partNo" required><br><br>
+
+                <label for="partName">Part Name:</label>
+                <input type="text" id="partName" name="partName" required><br><br>
+
+                <label for="qty">Qty:</label>
+                <input type="number" id="qty" name="qty" min="1" required><br><br>
+
+                <label for="price">Price (RM):</label>
+                <input type="number" id="price" name="price" min="0" step="0.01" required><br><br>
+
+                <label for="type">Order Type:</label>
+                <select id="type" name="type" required>
+                    <option value="Warranty">Warranty</option>
+                    <option value="Nonstock">Nonstock</option>
+                </select><br><br>
+
+                <input type="submit" value="Add Order">
+            </form>
+        </div>
+        <!-- Summary Category CRO by SVA -->
+        <div class="summary-container">
+            <h2>Summary Category CRO by SVA - March '25</h2>
+            <canvas id="croChart"></canvas>
+            <table id="croTable">
+                <thead>
+                    <tr>
+                        <th>SVA</th>
+                        <th>≥31 DAYS</th>
+                        <th>16-30 DAYS</th>
+                        <th>≤15 DAYS</th>
+                        <th>RM</th>
+                        <th>CAR</th>
+                        <th>ITEMS</th>
+                    </tr>
+                </thead>
+                <tbody id="croBody">
+                    <!-- Data will be populated here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <h2>Order List</h2>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>Advisor</th>
+                    <th>Date</th>
+                    <th>Reg No</th>
+                    <th>Part No</th>
+                    <th>Part Name</th>
+                    <th>Qty</th>
+                    <th>Price (RM)</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody id="orderBody">
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Existing Cust Section -->
+    <div id="existing-cust" class="content">
+        <h1>Existing Customers - Service Reminders</h1>
+        <div class="form-container">
+            <form id="customerForm" onsubmit="addCustomer(event)">
+                <label for="custAdvisor">Select Service Advisor:</label>
+                <select id="custAdvisor" name="custAdvisor" required>
+                    <!-- Populated dynamically -->
+                </select><br><br>
+
+                <label for="custName">Customer Name:</label>
+                <input type="text" id="custName" name="custName" required><br><br>
+
+                <label for="custRegNo">Reg No:</label>
+                <input type="text" id="custRegNo" name="custRegNo" required><br><br>
+
+                <label for="lastService">Last Service Date:</label>
+                <input type="date" id="lastService" name="lastService" required><br><br>
+
+                <label for="nextService">Next Service Due Date:</label>
+                <input type="date" id="nextService" name="nextService" required><br><br>
+
+                <label for="contact">Contact Number:</label>
+                <input type="text" id="contact" name="contact" pattern="[0-9]{10,12}" placeholder="e.g., 0123456789" required><br><br>
+
+                <input type="submit" value="Add Customer">
+            </form>
+        </div>
+        <h2>Customer List</h2>
+        <table id="customerTable">
+            <thead>
+                <tr>
+                    <th>Advisor</th>
+                    <th>Customer Name</th>
+                    <th>Reg No</th>
+                    <th>Last Service Date</th>
+                    <th>Next Service Due Date</th>
+                    <th>Contact Number</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="customerBody">
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Setting Section -->
+    <div id="setting" class="content">
+        <h1>Advisor Settings</h1>
+        <div class="form-container">
+            <form id="advisorForm" onsubmit="addAdvisor(event)">
+                <label for="advisorName">Advisor Name:</label>
+                <input type="text" id="advisorName" name="advisorName" required><br><br>
+                <input type="submit" value="Add Advisor">
+            </form>
+        </div>
+        <h2>Advisor List</h2>
+        <table id="advisorTable">
+            <thead>
+                <tr>
+                    <th>Advisor Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="advisorBody">
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        <p>© 2025 Service Advisor Sales System. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Advisor list (initial data)
+        let advisors = ["Advisor 1", "Advisor 2", "Advisor 3", "Advisor 4", "Advisor 5"];
+
+        // Sales data (dynamically initialized based on advisors, now with dates)
+        let salesData = {};
+        advisors.forEach(advisor => {
+            salesData[advisor] = {};
+        });
+
+        // Order data
+        let orderData = [];
+
+        // Customer data
+        let customerData = [];
+
+        // Chart initialization for Sales Report
+        let salesChart;
+        const ctxSales = document.getElementById('salesChart')?.getContext('2d');
+        function createSalesChart(data) {
+            const labels = Object.keys(data);
+            const totals = labels.map(advisor => {
+                return Object.values(data[advisor]).reduce((sum, entry) => sum + entry.labour + entry.part + entry.accessories + entry.gearup + entry.lubricant + entry.material, 0);
+            });
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            salesChart = new Chart(ctxSales, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Sales (RM)',
+                        data: totals,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Sales (RM)' } }
+                    },
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+
+        // Chart initialization for Intake Report
+        let intakeChart;
+        const ctxIntake = document.getElementById('intakeChart')?.getContext('2d');
+        function createIntakeChart(data) {
+            const labels = Object.keys(data);
+            const intakes = labels.map(advisor => {
+                return Object.values(data[advisor]).reduce((sum, entry) => sum + entry.intake, 0);
+            });
+
+            if (intakeChart) {
+                intakeChart.destroy();
+            }
+
+            intakeChart = new Chart(ctxIntake, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Intake (Unit)',
+                        data: intakes,
+                        backgroundColor: 'rgba(255, 165, 0, 0.2)', // Orange for distinction
+                        borderColor: 'rgba(255, 165, 0, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Intake (Unit)' } }
+                    },
+                    plugins: { legend: { display: true } }
+                }
+            });
+        }
+
+        // Chart initialization for CRO Report
+        let croChart;
+        const ctxCRO = document.getElementById('croChart')?.getContext('2d');
+        function createCROChart(summaryData) {
+            const labels = Object.keys(summaryData);
+            const totals = labels.map(advisor => summaryData[advisor].totalItems);
+
+            if (croChart) {
+                croChart.destroy();
+            }
+
+            croChart = new Chart(ctxCRO, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Total Items',
+                        data: totals,
+                        backgroundColor: 'rgba(216, 191, 216, 0.6)', // Light purple to match the attached chart
+                        borderColor: 'rgba(216, 191, 216, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Items' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Function to calculate days difference
+        function calculateDaysDifference(date) {
+            const currentDate = new Date('2025-03-13');
+            const targetDate = new Date(date);
+            const diffTime = Math.abs(targetDate - currentDate);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // Function to check if service is due soon (within 7 days)
+        function isDueSoon(nextServiceDate) {
+            const daysDiff = calculateDaysDifference(nextServiceDate);
+            const currentDate = new Date('2025-03-13');
+            const dueDate = new Date(nextServiceDate);
+            return dueDate >= currentDate && daysDiff <= 7;
+        }
+
+        // Function to update all advisor dropdowns
+        function updateAdvisorDropdowns() {
+            const dropdowns = [
+                document.getElementById("advisor"),
+                document.getElementById("advisorFilter"),
+                document.getElementById("advisorIntakeFilter"),
+                document.getElementById("orderAdvisor"),
+                document.getElementById("custAdvisor")
+            ];
+
+            dropdowns.forEach(dropdown => {
+                if (dropdown) {
+                    const currentValue = dropdown.value;
+                    const isFilterDropdown = dropdown.id === "advisorFilter" || dropdown.id === "advisorIntakeFilter";
+                    dropdown.innerHTML = isFilterDropdown ? '<option value="all">All</option>' : '';
+                    advisors.forEach(advisor => {
+                        const option = document.createElement("option");
+                        option.value = advisor;
+                        option.textContent = advisor;
+                        dropdown.appendChild(option);
+                    });
+                    if (advisors.includes(currentValue)) {
+                        dropdown.value = currentValue;
+                    } else if (!isFilterDropdown) {
+                        dropdown.value = advisors[0] || '';
+                    }
+                }
+            });
+        }
+
+        // Function to switch sections
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.content');
+            const navLinks = document.querySelectorAll('.navbar a');
+            sections.forEach(section => section.classList.remove('active'));
+            navLinks.forEach(link => link.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelector(`a[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            if (sectionId === 'report') {
+                populateTable(salesData);
+                createSalesChart(salesData);
+                populateIntakeTable(salesData);
+                createIntakeChart(salesData);
+            } else if (sectionId === 'cust-request') {
+                populateOrderTable();
+                populateCROSummary();
+            } else if (sectionId === 'existing-cust') {
+                populateCustomerTable();
+            } else if (sectionId === 'setting') {
+                populateAdvisorTable();
+            }
+        }
+
+        // Function to update sales data with date
+        function updateSalesData(event) {
+            event.preventDefault();
+            const form = document.getElementById("salesForm");
+            const advisor = form.advisor.value;
+            const date = form.date.value;
+            const data = {
+                intake: parseInt(form.intake.value),
+                labour: parseFloat(form.labour.value),
+                part: parseFloat(form.part.value),
+                accessories: parseFloat(form.accessories.value),
+                gearup: parseFloat(form.gearup.value),
+                lubricant: parseFloat(form.lubricant.value),
+                material: parseFloat(form.material.value)
+            };
+            if (!salesData[advisor]) salesData[advisor] = {};
+            salesData[advisor][date] = data;
+            form.reset();
+            alert("Sales data updated successfully for " + date + "!");
+        }
+
+        // Function to populate the sales report table
+        function populateTable(data) {
+            const reportBody = document.getElementById("reportBody");
+            reportBody.innerHTML = "";
+            for (let advisor in data) {
+                const totalSales = Object.values(data[advisor]).reduce((sum, entry) => sum + entry.labour + entry.part + entry.accessories + entry.gearup + entry.lubricant + entry.material, 0);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${advisor}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.intake, 0)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.labour, 0).toFixed(2)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.part, 0).toFixed(2)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.accessories, 0).toFixed(2)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.gearup, 0).toFixed(2)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.lubricant, 0).toFixed(2)}</td>
+                    <td>${Object.values(data[advisor]).reduce((sum, entry) => sum + entry.material, 0).toFixed(2)}</td>
+                    <td>${totalSales.toFixed(2)}</td>
+                `;
+                reportBody.appendChild(row);
+            }
+        }
+
+        // Function to populate the intake report table
+        function populateIntakeTable(data) {
+            const intakeBody = document.getElementById("intakeBody");
+            intakeBody.innerHTML = "";
+            for (let advisor in data) {
+                const totalIntake = Object.values(data[advisor]).reduce((sum, entry) => sum + entry.intake, 0);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${advisor}</td>
+                    <td>${totalIntake}</td>
+                `;
+                intakeBody.appendChild(row);
+            }
+        }
+
+        // Function to filter the sales report table and chart
+        function filterTable() {
+            const filterValue = document.getElementById("advisorFilter").value;
+            const reportBody = document.getElementById("reportBody");
+            reportBody.innerHTML = "";
+            let filteredData = {};
+            if (filterValue === "all") {
+                filteredData = salesData;
+                populateTable(salesData);
+            } else {
+                filteredData[filterValue] = salesData[filterValue] || {};
+                populateTable(filteredData);
+            }
+            createSalesChart(filteredData);
+        }
+
+        // Function to filter the intake report table and chart
+        function filterIntakeTable() {
+            const filterValue = document.getElementById("advisorIntakeFilter").value;
+            const intakeBody = document.getElementById("intakeBody");
+            intakeBody.innerHTML = "";
+            let filteredData = {};
+            if (filterValue === "all") {
+                filteredData = salesData;
+                populateIntakeTable(salesData);
+            } else {
+                filteredData[filterValue] = salesData[filterValue] || {};
+                populateIntakeTable(filteredData);
+            }
+            createIntakeChart(filteredData);
+        }
+
+        // Function to add order
+        function addOrder(event) {
+            event.preventDefault();
+            const form = document.getElementById("orderForm");
+            const order = {
+                advisor: form.orderAdvisor.value,
+                date: form.date.value,
+                regNo: form.regNo.value,
+                partNo: form.partNo.value,
+                partName: form.partName.value,
+                qty: parseInt(form.qty.value),
+                price: parseFloat(form.price.value),
+                type: form.type.value
+            };
+            orderData.push(order);
+            form.reset();
+            populateOrderTable();
+            populateCROSummary();
+            alert("Order added successfully!");
+        }
+
+        // Function to populate the order table
+        function populateOrderTable() {
+            const orderBody = document.getElementById("orderBody");
+            orderBody.innerHTML = "";
+            orderData.forEach(order => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${order.advisor}</td>
+                    <td>${order.date}</td>
+                    <td>${order.regNo}</td>
+                    <td>${order.partNo}</td>
+                    <td>${order.partName}</td>
+                    <td>${order.qty}</td>
+                    <td>${order.price.toFixed(2)}</td>
+                    <td>${order.type}</td>
+                `;
+                orderBody.appendChild(row);
+            });
+        }
+
+        // Function to populate the CRO summary table and chart
+        function populateCROSummary() {
+            const croBody = document.getElementById("croBody");
+            croBody.innerHTML = "";
+
+            // Summarize data by advisor
+            const summaryData = {};
+            advisors.forEach(advisor => {
+                summaryData[advisor] = {
+                    over31Days: 0,
+                    between16And30Days: 0,
+                    under15Days: 0,
+                    totalPrice: 0,
+                    totalCars: 0,
+                    totalItems: 0
+                };
+            });
+
+            const uniqueCars = new Set();
+            orderData.forEach(order => {
+                const advisor = order.advisor;
+                const daysDiff = calculateDaysDifference(order.date);
+                if (daysDiff >= 31) {
+                    summaryData[advisor].over31Days++;
+                } else if (daysDiff >= 16) {
+                    summaryData[advisor].between16And30Days++;
+                } else {
+                    summaryData[advisor].under15Days++;
+                }
+                summaryData[advisor].totalPrice += order.price;
+                summaryData[advisor].totalItems += order.qty;
+
+                // Track unique cars by Reg No for the advisor
+                if (!uniqueCars.has(`${advisor}-${order.regNo}`)) {
+                    uniqueCars.add(`${advisor}-${order.regNo}`);
+                    summaryData[advisor].totalCars++;
+                }
+            });
+
+            // Populate the table
+            for (let advisor in summaryData) {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${advisor}</td>
+                    <td>${summaryData[advisor].over31Days}</td>
+                    <td>${summaryData[advisor].between16And30Days}</td>
+                    <td>${summaryData[advisor].under15Days}</td>
+                    <td>${summaryData[advisor].totalPrice.toFixed(2)}</td>
+                    <td>${summaryData[advisor].totalCars}</td>
+                    <td>${summaryData[advisor].totalItems}</td>
+                `;
+                croBody.appendChild(row);
+            }
+
+            // Update the chart
+            createCROChart(summaryData);
+        }
+
+        // Function to add customer
+        function addCustomer(event) {
+            event.preventDefault();
+            const form = document.getElementById("customerForm");
+            const customer = {
+                advisor: form.custAdvisor.value,
+                name: form.custName.value,
+                regNo: form.custRegNo.value,
+                lastService: form.lastService.value,
+                nextService: form.nextService.value,
+                contact: form.contact.value
+            };
+            customerData.push(customer);
+            form.reset();
+            populateCustomerTable();
+            alert("Customer added successfully!");
+        }
+
+        // Function to send reminder (simulated)
+        function sendReminder(customer) {
+            alert(`Reminder sent to ${customer.name} (${customer.contact}): Your vehicle (${customer.regNo}) is due for servicing on ${customer.nextService}!`);
+        }
+
+        // Function to populate the customer table
+        function populateCustomerTable() {
+            const customerBody = document.getElementById("customerBody");
+            customerBody.innerHTML = "";
+            customerData.forEach(customer => {
+                const row = document.createElement("tr");
+                const isDue = isDueSoon(customer.nextService);
+                if (isDue) row.classList.add("due-soon");
+                row.innerHTML = `
+                    <td>${customer.advisor}</td>
+                    <td>${customer.name}</td>
+                    <td>${customer.regNo}</td>
+                    <td>${customer.lastService}</td>
+                    <td>${customer.nextService}</td>
+                    <td>${customer.contact}</td>
+                    <td><button onclick='sendReminder(${JSON.stringify(customer)})'>Send Reminder</button></td>
+                `;
+                customerBody.appendChild(row);
+            });
+        }
+
+        // Function to add advisor
+        function addAdvisor(event) {
+            event.preventDefault();
+            const form = document.getElementById("advisorForm");
+            const advisorName = form.advisorName.value.trim();
+            if (advisorName && !advisors.includes(advisorName)) {
+                advisors.push(advisorName);
+                salesData[advisorName] = {};
+                updateAdvisorDropdowns();
+                populateAdvisorTable();
+                form.reset();
+                alert("Advisor added successfully!");
+            } else {
+                alert("Advisor name already exists or is invalid!");
+            }
+        }
+
+        // Function to edit advisor
+        function editAdvisor(oldName) {
+            const newName = prompt("Enter new advisor name:", oldName);
+            if (newName && newName.trim() && !advisors.includes(newName.trim()) && newName.trim() !== oldName) {
+                const index = advisors.indexOf(oldName);
+                advisors[index] = newName.trim();
+
+                // Update salesData
+                salesData[newName.trim()] = salesData[oldName];
+                delete salesData[oldName];
+
+                // Update orderData
+                orderData.forEach(order => {
+                    if (order.advisor === oldName) order.advisor = newName.trim();
+                });
+
+                // Update customerData
+                customerData.forEach(customer => {
+                    if (customer.advisor === oldName) customer.advisor = newName.trim();
+                });
+
+                updateAdvisorDropdowns();
+                populateAdvisorTable();
+                populateOrderTable();
+                populateCustomerTable();
+                populateCROSummary();
+                alert("Advisor name updated successfully!");
+            } else {
+                alert("New advisor name is invalid or already exists!");
+            }
+        }
+
+        // Function to delete advisor
+        function deleteAdvisor(advisorName) {
+            if (confirm(`Are you sure you want to delete ${advisorName}? This will also remove associated data.`)) {
+                advisors = advisors.filter(advisor => advisor !== advisorName);
+
+                // Remove from salesData
+                delete salesData[advisorName];
+
+                // Remove from orderData
+                orderData = orderData.filter(order => order.advisor !== advisorName);
+
+                // Remove from customerData
+                customerData = customerData.filter(customer => customer.advisor !== advisorName);
+
+                updateAdvisorDropdowns();
+                populateAdvisorTable();
+                populateOrderTable();
+                populateCustomerTable();
+                populateCROSummary();
+                alert("Advisor deleted successfully!");
+            }
+        }
+
+        // Function to populate the advisor table
+        function populateAdvisorTable() {
+            const advisorBody = document.getElementById("advisorBody");
+            advisorBody.innerHTML = "";
+            advisors.forEach(advisor => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${advisor}</td>
+                    <td>
+                        <button onclick="editAdvisor('${advisor}')">Edit</button>
+                        <button class="delete-btn" onclick="deleteAdvisor('${advisor}')">Delete</button>
+                    </td>
+                `;
+                advisorBody.appendChild(row);
+            });
+        }
+
+        // Function to print Sales Report to PDF
+        function printSalesReport() {
+            const element = document.getElementById('report').querySelector('h1:first-of-type')?.nextElementSibling?.nextElementSibling?.nextElementSibling?.nextElementSibling; // Target the sales report content
+            if (element) {
+                html2pdf().from(element).save('sales_report.pdf');
+            } else {
+                alert("Error generating PDF for Sales Report.");
+            }
+        }
+
+        // Function to print Intake Report to PDF
+        function printIntakeReport() {
+            const element = document.getElementById('report').querySelector('h1:nth-of-type(2)')?.nextElementSibling?.nextElementSibling?.nextElementSibling; // Target the intake report content
+            if (element) {
+                html2pdf().from(element).save('intake_report.pdf');
+            } else {
+                alert("Error generating PDF for Intake Report.");
+            }
+        }
+
+        // Show Sales Data section by default and initialize dropdowns
+        window.onload = function() {
+            updateAdvisorDropdowns();
+            showSection('sales-data');
+        };
+    </script>
+</body>
+</html>
